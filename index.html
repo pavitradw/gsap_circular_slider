@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rotating Slider Section</title>
+    <style>
+      .slider-section {
+        width: 100%;
+        min-height: 100vh;
+        background-color: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        transition: background-color 1s ease;
+        position: relative;
+      }
+
+      .logo {
+        position: absolute;
+        width: 260px;
+      }
+
+      .deck {
+        position: relative;
+        width: 280px;
+        height: 540px;
+        perspective: 1000px;
+      }
+
+      .deck .logo {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        transform-style: preserve-3d;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- You can now add this section anywhere in your page -->
+    <section class="slider-section" id="cardSlider1">
+      <div class="deck">
+        <img class="logo" src="./image.png" />
+        <img class="logo" src="./image.png" />
+        <img class="logo" src="./image.png" />
+        <img class="logo" src="./image.png" />
+        <img class="logo" src="./image.png" />
+      </div>
+    </section>
+
+    <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
+    <script>
+      // Slider class to handle multiple instances
+      class CardSlider {
+        constructor(sectionId) {
+          this.section = document.getElementById(sectionId);
+          this.logos = gsap.utils.toArray(`#${sectionId} .logo`);
+          this.deckLogos = gsap.utils.toArray(`#${sectionId} .deck .logo`);
+          
+          this.colors = [
+            '#F5E6E8', // Light Pink
+            '#D5F5E3', // Light Green
+            '#E8F6F3', // Light Cyan
+            '#F5EEF8', // Light Purple
+            '#FDF2E9', // Light Orange
+            '#F4ECF7', // Light Lavender
+            '#E8F8F5'  // Light Turquoise
+          ];
+
+          this.currentIndex = 0;
+          this.init();
+        }
+
+        init() {
+          // Initial setup of cards
+          this.deckLogos.forEach((logo, index) => {
+            gsap.set(logo, {
+              zIndex: index,
+              rotationY: index * 1,
+              transformOrigin: "50% 750px",
+            });
+          });
+
+          this.runAnimation();
+        }
+
+        changeBackgroundColor() {
+          this.section.style.backgroundColor = this.colors[this.currentIndex];
+          this.currentIndex = (this.currentIndex + 1) % this.colors.length;
+        }
+
+        runAnimation() {
+          // Initial animation
+          gsap.to(this.deckLogos, {
+            duration: 2,
+            ease: "power2.out",
+            rotation: (index) => {
+              return (360 / this.deckLogos.length) * index;
+            },
+            transformOrigin: "50% 750px",
+            opacity: 1,
+            stagger: 0.1,
+            onComplete: () => this.startRotationCycle()
+          });
+        }
+
+        startRotationCycle() {
+          const cardRotationTime = 5; // 5 seconds per card
+          const wrapUpTime = 3; // 3 seconds for wrap-up animation
+          
+          const tl = gsap.timeline({
+            onComplete: () => {
+              // Reset and restart immediately
+              gsap.set(this.deckLogos, {
+                rotation: 0,
+                opacity: 0
+              });
+              this.runAnimation();
+            }
+          });
+          
+          // Regular card rotations
+          this.deckLogos.forEach((_, index) => {
+            tl.to(this.deckLogos, {
+              rotation: `+=${360 / this.deckLogos.length}`,
+              duration: cardRotationTime,
+              ease: "power2.inOut",
+              onStart: () => this.changeBackgroundColor()
+            });
+          });
+
+          // Wrap-up animation
+          tl.to(this.deckLogos, {
+            rotation: (index) => {
+              const currentRotation = gsap.getProperty(this.deckLogos[index], "rotation");
+              return Math.ceil(currentRotation / 360) * 360;
+            },
+            duration: wrapUpTime,
+            ease: "power3.inOut",
+            stagger: {
+              amount: 0.5,
+              from: "end"
+            }
+          });
+
+          // Change background back to initial color
+          tl.to(this.section, {
+            backgroundColor: this.colors[0],
+            duration: 1
+          }, "-=2");
+        }
+      }
+
+      // Initialize slider(s)
+      document.addEventListener('DOMContentLoaded', () => {
+        new CardSlider('cardSlider1');
+        // You can initialize multiple sliders like this:
+        // new CardSlider('cardSlider2');
+        // new CardSlider('cardSlider3');
+      });
+    </script>
+  </body>
+</html>
